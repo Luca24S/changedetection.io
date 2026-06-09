@@ -1,0 +1,33 @@
+services:
+  changedetection:
+    image: ghcr.io/dgtlmoon/changedetection.io:latest
+    container_name: changedetection
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./datastore:/datastore
+    environment:
+      - TZ=Europe/Zurich
+      - LOGGER_LEVEL=INFO
+      - ALLOW_IANA_RESTRICTED_ADDRESSES=true
+    depends_on:
+      - swisscom-ai
+    networks:
+      - changedetection_net
+
+  swisscom-ai:
+    build: ./swisscom-ai-proxy
+    container_name: swisscom-ai
+    restart: unless-stopped
+    env_file:
+      - .env
+    expose:
+      - "8080"
+    networks:
+      - changedetection_net
+
+networks:
+  changedetection_net:
+    driver: bridge
+

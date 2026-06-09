@@ -1,0 +1,4 @@
+.env
+datastore/
+__pycache__/
+
