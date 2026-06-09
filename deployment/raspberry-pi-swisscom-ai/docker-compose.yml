@@ -11,8 +11,25 @@ services:
       - TZ=Europe/Zurich
       - LOGGER_LEVEL=INFO
       - ALLOW_IANA_RESTRICTED_ADDRESSES=true
+      - PLAYWRIGHT_DRIVER_URL=ws://browser-sockpuppet-chrome:3000
     depends_on:
       - swisscom-ai
+      - browser-sockpuppet-chrome
+    networks:
+      - changedetection_net
+
+  browser-sockpuppet-chrome:
+    image: dgtlmoon/sockpuppetbrowser:latest
+    container_name: browser-sockpuppet-chrome
+    hostname: browser-sockpuppet-chrome
+    restart: unless-stopped
+    cap_add:
+      - SYS_ADMIN
+    environment:
+      - SCREEN_WIDTH=1920
+      - SCREEN_HEIGHT=1080
+      - SCREEN_DEPTH=16
+      - MAX_CONCURRENT_CHROME_PROCESSES=2
     networks:
       - changedetection_net
 
@@ -30,4 +47,3 @@ services:
 networks:
   changedetection_net:
     driver: bridge
-

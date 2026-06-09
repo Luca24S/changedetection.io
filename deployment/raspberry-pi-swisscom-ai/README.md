@@ -5,7 +5,7 @@ The real Swisscom AI key stays in the proxy container only.
 
 ## Files
 
-- `docker-compose.yml`: starts changedetection.io and the internal proxy.
+- `docker-compose.yml`: starts changedetection.io, the internal Swisscom AI proxy, and a browser container for JavaScript/screenshot fetches.
 - `.env.example`: copy to `.env` and insert the Swisscom AI key.
 - `swisscom-ai-proxy/`: tiny Flask/Gunicorn proxy that forwards chat completions to Swisscom AI.
 
@@ -13,8 +13,9 @@ The real Swisscom AI key stays in the proxy container only.
 
 - A Raspberry Pi specific Docker Compose setup.
 - A separate `swisscom-ai` proxy container that speaks an OpenAI-compatible API to changedetection.io.
+- A separate `browser-sockpuppet-chrome` container for pages that need JavaScript, screenshots, Visual Selector, or browser steps.
 - Isolation for the real Swisscom AI key: changedetection.io only sees the dummy key `local-proxy`.
-- A private Docker network between `changedetection` and `swisscom-ai`.
+- A private Docker network between `changedetection`, `swisscom-ai`, and `browser-sockpuppet-chrome`.
 - Persistent changedetection.io data in `./datastore`.
 - Automatic container restart with `restart: unless-stopped`.
 - `.gitignore` rules to avoid committing `.env` and runtime data.
@@ -85,6 +86,32 @@ Find the Raspberry Pi IP with:
 hostname -I
 ```
 
+## JavaScript, screenshots and Visual Selector
+
+This deployment enables a browser fetcher through:
+
+```text
+PLAYWRIGHT_DRIVER_URL=ws://browser-sockpuppet-chrome:3000
+```
+
+Use it for pages that need JavaScript rendering, screenshots, Visual Selector, browser
+steps, or pages where the default text fetcher says it found HTML but no text.
+
+For each watch that needs this:
+
+```text
+Edit -> Request -> Fetch method -> Chrome/Browser/Playwright fetcher
+```
+
+Then save, run `Recheck`, reopen `Edit`, and use:
+
+```text
+Visual Filter Selector
+```
+
+If Visual Selector still says data is not ready, run one successful `Recheck` with the
+browser fetcher selected, then reload the edit page.
+
 ## changedetection.io AI settings
 
 In the UI, go to:
@@ -124,6 +151,7 @@ From the deployment directory:
 docker compose ps
 docker compose logs -f
 docker compose logs --tail=100 changedetection
+docker compose logs --tail=100 browser-sockpuppet-chrome
 docker compose logs --tail=100 swisscom-ai
 docker compose restart
 docker compose down
@@ -161,6 +189,7 @@ Check the result:
 ```bash
 docker compose ps
 docker compose logs --tail=100 changedetection
+docker compose logs --tail=100 browser-sockpuppet-chrome
 docker compose logs --tail=100 swisscom-ai
 ```
 
@@ -179,6 +208,7 @@ docker compose up -d
 ## Isolation notes
 
 - The proxy is not published with `ports`; it is only reachable inside the Docker network.
+- The browser container is not published with `ports`; it is only reachable inside the Docker network.
 - changedetection.io only receives a dummy key (`local-proxy`).
 - The real Swisscom key is stored in `.env` and injected only into the proxy container.
 - `ALLOW_IANA_RESTRICTED_ADDRESSES=true` is required because changedetection.io blocks private/internal LLM API base URLs by default.
